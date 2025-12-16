@@ -2,6 +2,8 @@ from fastmcp import FastMCP
 import os
 import aiosqlite  # Changed: sqlite3 → aiosqlite
 import tempfile
+from typing import Optional
+
 # Use temporary directory which should be writable
 TEMP_DIR = tempfile.gettempdir()
 DB_PATH = os.path.join(TEMP_DIR, "expenses.db")
@@ -38,37 +40,14 @@ def init_db():  # Keep as sync for initialization
 # Initialize database synchronously at module load
 init_db()
 
-@mcp.tool(
-    name="add_expense",
-    description="Add a new expense entry to the database",
-    parameters={
-        "type": "object",
-        "properties": {
-            "date": {
-                "type": "string",
-                "description": "Expense date in YYYY-MM-DD format"
-            },
-            "amount": {
-                "type": "number",
-                "description": "Expense amount"
-            },
-            "category": {
-                "type": "string",
-                "description": "Expense category"
-            },
-            "subcategory": {
-                "type": "string",
-                "description": "Optional subcategory"
-            },
-            "note": {
-                "type": "string",
-                "description": "Optional note"
-            }
-        },
-        "required": ["date", "amount", "category"]
-    }
-)
-async def add_expense(date, amount, category, subcategory="", note=""):  # Changed: added async
+@mcp.tool()
+async def add_expense(
+    date: str,
+    amount: float,
+    category: str,
+    subcategory: str = "",
+    note: str = ""
+):  # Changed: added async
     '''Add a new expense entry to the database.'''
     try:
         async with aiosqlite.connect(DB_PATH) as c:  # Changed: added async
@@ -84,25 +63,11 @@ async def add_expense(date, amount, category, subcategory="", note=""):  # Chang
             return {"status": "error", "message": "Database is in read-only mode. Check file permissions."}
         return {"status": "error", "message": f"Database error: {str(e)}"}
     
-@mcp.tool(
-    name="list_expenses",
-    description="List expenses within a date range",
-    parameters={
-        "type": "object",
-        "properties": {
-            "start_date": {
-                "type": "string",
-                "description": "Start date YYYY-MM-DD"
-            },
-            "end_date": {
-                "type": "string",
-                "description": "End date YYYY-MM-DD"
-            }
-        },
-        "required": ["start_date", "end_date"]
-    }
-)
-async def list_expenses(start_date, end_date):  # Changed: added async
+@mcp.tool()
+async def list_expenses(
+    start_date: str,
+    end_date: str
+):  # Changed: added async
     '''List expense entries within an inclusive date range.'''
     try:
         async with aiosqlite.connect(DB_PATH) as c:  # Changed: added async
@@ -120,29 +85,12 @@ async def list_expenses(start_date, end_date):  # Changed: added async
     except Exception as e:
         return {"status": "error", "message": f"Error listing expenses: {str(e)}"}
 
-@mcp.tool(
-    name="summarize",
-    description="Summarize expenses by category",
-    parameters={
-        "type": "object",
-        "properties": {
-            "start_date": {
-                "type": "string",
-                "description": "Start date YYYY-MM-DD"
-            },
-            "end_date": {
-                "type": "string",
-                "description": "End date YYYY-MM-DD"
-            },
-            "category": {
-                "type": "string",
-                "description": "Optional category filter"
-            }
-        },
-        "required": ["start_date", "end_date"]
-    }
-)
-async def summarize(start_date, end_date, category=None):  # Changed: added async
+@mcp.tool()
+async def summarize(
+    start_date: str,
+    end_date: str,
+    category: Optional[str] = None
+):  # Changed: added async
     '''Summarize expenses by category within an inclusive date range.'''
     try:
         async with aiosqlite.connect(DB_PATH) as c:  # Changed: added async
